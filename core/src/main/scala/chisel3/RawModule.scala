@@ -3,7 +3,6 @@
 package chisel3
 
 import scala.util.Try
-import scala.language.experimental.macros
 import chisel3.experimental.{BaseModule, OpaqueType, SourceInfo, UnlocatableSourceInfo}
 import chisel3.internal._
 import chisel3.internal.binding._
@@ -97,9 +96,13 @@ abstract class RawModule extends BaseModule {
   }
 
   private[chisel3] def withRegion[A](newRegion: VectorBuilder[Command])(thunk: => A): A = {
+    _currentRegion ++= stagedSecretCommands
+    stagedSecretCommands.clear()
     var oldRegion = _currentRegion
     changeRegion(newRegion)
     val result = thunk
+    _currentRegion ++= stagedSecretCommands
+    stagedSecretCommands.clear()
     changeRegion(oldRegion)
     result
   }
@@ -220,6 +223,7 @@ abstract class RawModule extends BaseModule {
 
     // Secret connections can be staged if user bored into children modules
     component.secretCommands ++= stagedSecretCommands
+    stagedSecretCommands.clear()
     _component = Some(component)
     _component
   }

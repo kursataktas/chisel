@@ -14,10 +14,11 @@ object v {
     "2.13.11",
     "2.13.12",
     "2.13.13",
-    "2.13.14"
+    "2.13.14",
+    "2.13.15"
   )
   val scalaCrossVersions = Seq(
-    "2.13.14"
+    "2.13.15"
   )
   val scalaVersion = scalaCrossVersions.head
   val jmhVersion = "1.37"
@@ -73,7 +74,8 @@ object utils extends Module {
           val url = v.circt(
             firtoolVersion,
             if (linux) "linux" else if (mac) "macos" else throw new Exception("unsupported os"),
-            if (amd64) "x64" else throw new Exception("unsupported arch")
+            // circt does not yet publish for macos-aarch64, use x64 for now
+            if (amd64 || mac) "x64" else throw new Exception("unsupported arch")
           )
           T.ctx().log.info(s"Downloading circt from ${url}")
           mill.util.Util.download(url, os.rel / "circt.tar.gz")
@@ -96,7 +98,8 @@ object utils extends Module {
             21,
             "1-2",
             if (linux) "linux" else if (mac) "macos" else throw new Exception("unsupported os"),
-            if (amd64) "x64" else if (aarch64) "aarch64" else throw new Exception("unsupported arch")
+            // There is no macos-aarch64 for jextract 21, use x64 for now
+            if (amd64 || mac) "x64" else if (aarch64) "aarch64" else throw new Exception("unsupported arch")
           )
           T.ctx().log.info(s"Downloading jextract from ${url}")
           mill.util.Util.download(url, os.rel / "jextract.tar.gz")
@@ -123,7 +126,7 @@ trait Firrtl extends common.FirrtlModule with ChiselPublishModule with CrossSbtM
 
   def scoptIvy = v.scopt
 
-  object test extends SbtModuleTests with TestModule.ScalaTest {
+  object test extends SbtModuleTests with TestModule.ScalaTest with ScalafmtModule {
     def ivyDeps = Agg(v.scalatest, v.scalacheck)
   }
 }
@@ -133,7 +136,7 @@ object svsim extends Cross[Svsim](v.scalaCrossVersions)
 trait Svsim extends common.SvsimModule with ChiselPublishModule with CrossSbtModule with ScalafmtModule {
   def millSourcePath = super.millSourcePath / os.up / "svsim"
 
-  object test extends SbtModuleTests with TestModule.ScalaTest {
+  object test extends SbtModuleTests with TestModule.ScalaTest with ScalafmtModule {
     def ivyDeps = Agg(v.scalatest, v.scalacheck)
   }
 }
@@ -215,7 +218,7 @@ trait Chisel extends common.ChiselModule with ChiselPublishModule with CrossSbtM
 
   def pluginModule = plugin(crossScalaVersion)
 
-  object test extends SbtModuleTests with TestModule.ScalaTest {
+  object test extends SbtModuleTests with TestModule.ScalaTest with ScalafmtModule {
     def ivyDeps = Agg(v.scalatest, v.scalacheck)
   }
 }
@@ -228,7 +231,7 @@ trait IntegrationTests extends CrossSbtModule with ScalafmtModule with common.Ha
 
   def millSourcePath = os.pwd / "integration-tests"
 
-  object test extends SbtModuleTests with TestModule.ScalaTest {
+  object test extends SbtModuleTests with TestModule.ScalaTest with ScalafmtModule {
     override def moduleDeps = super.moduleDeps :+ chisel().test
     def ivyDeps = Agg(v.scalatest, v.scalacheck)
   }
