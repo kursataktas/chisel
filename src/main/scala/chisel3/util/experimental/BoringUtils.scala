@@ -246,13 +246,18 @@ object BoringUtils {
     }
     def drill(source: A, path: Seq[BaseModule], connectionLocation: Seq[BaseModule], up: Boolean): A = {
       path.zip(connectionLocation).foldLeft(source) {
+<<<<<<< HEAD
         case (rhs, (module, conLoc)) if (module.isFullyClosed) => boringError(module); DontCare.asInstanceOf[A]
         case (rhs, (module, _))
             if (up && module == path(0) && isPort(rhs) && (!createProbe.nonEmpty || !createProbe.get.writable)) => {
           // When drilling from the original source, if it's already a port just return it.
           // As an exception, insist rwTaps are done from within the module and exported out.
+=======
+        case (rhs, (module, _)) if ((up || isDriveDone(rhs)) && module == path(0) && isPort(rhs)) => {
+>>>>>>> 9d58f0dfb (Allow BoringUtils to use existing port in a closed module (#4484))
           rhs
         }
+        case (rhs, (module, conLoc)) if (module.isFullyClosed) => boringError(module); DontCare.asInstanceOf[A]
         case (rhs, (module, conLoc)) =>
           skipPrefix { // so `lcaSource` isn't in the name of the secret port
             if (!up && createProbe.nonEmpty && createProbe.get.writable) {
